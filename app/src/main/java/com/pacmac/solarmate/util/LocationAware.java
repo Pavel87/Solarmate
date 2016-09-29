@@ -34,14 +34,13 @@ public class LocationAware implements GoogleApiClient.ConnectionCallbacks, Googl
     }
 
 
-    private static Context context = null;
+    private static Context mContext = null;
 
     private static LocationAware locationAware = null;
     private static GoogleApiClient mGoogleApiClient = null;
 
 
     private LocationAware(Context context) {
-        this.context = context;
         setupProvider(context);
         onStart();
     }
@@ -50,6 +49,7 @@ public class LocationAware implements GoogleApiClient.ConnectionCallbacks, Googl
         if (locationAware == null) {
             locationAware = new LocationAware(context);
         }
+        mContext = context;
         return locationAware;
     }
 
@@ -76,7 +76,7 @@ public class LocationAware implements GoogleApiClient.ConnectionCallbacks, Googl
 
 
     @Override
-    public void onConnected(@Nullable Bundle bundle) {
+    public void onConnected(Bundle bundle) {
         isConnected = true;
         sendLocConnectedBroadcast(isConnected);
         getLastLocation();
@@ -90,27 +90,40 @@ public class LocationAware implements GoogleApiClient.ConnectionCallbacks, Googl
     }
 
     @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+    public void onConnectionFailed(ConnectionResult connectionResult) {
         isConnected = false;
         sendLocConnectedBroadcast(isConnected);
     }
 
-    public static void getLastLocation() {
-        if (ActivityCompat.checkSelfPermission(context,
+    public static Bundle getLastLocation() {
+        // TODO check better for permission
+        if (ActivityCompat.checkSelfPermission(mContext,
                 Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION)
+                && ActivityCompat.checkSelfPermission(mContext, Manifest.permission.ACCESS_COARSE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
-            return;
+            return null;
         }
         Location currentLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+
+        // Create bundle for passing location to main Solar Activity and storing last location in settings
+        Bundle locBundle = new Bundle();
         longitude = currentLocation.getLongitude();
         latitude = currentLocation.getLatitude();
+        locBundle.putDouble(Constants.LAT_LOC, currentLocation.getLatitude());
+        locBundle.putDouble(Constants.LONG_LOC, currentLocation.getLongitude());
+        Utility.setPreferenceString(mContext,Constants.LAT_LOC, String.valueOf(latitude));
+        Utility.setPreferenceString(mContext,Constants.LONG_LOC, String.valueOf(longitude));
+
+        return locBundle;
     }
+
+
 
     private void sendLocConnectedBroadcast(boolean isConnected) {
         Intent onConnectedIntent = new Intent(Constants.ACTION_LOC_CONNECTED);
         onConnectedIntent.putExtra(Constants.INTENT_EXTRA_CONNECTED_FLAG, isConnected);
-        LocalBroadcastManager.getInstance(context).sendBroadcast(onConnectedIntent);
+        LocalBroadcastManager.getInstance(mContext).sendBroadcast(onConnectedIntent);
     }
 
 }
+//TODO check for permission available

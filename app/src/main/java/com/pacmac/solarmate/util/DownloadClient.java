@@ -4,6 +4,7 @@ import android.os.AsyncTask;
 import android.util.Log;
 
 import com.google.gson.Gson;
+import com.pacmac.solarmate.gui.PublishSolarDataCallback;
 import com.pacmac.solarmate.model.SolarDataObject;
 import com.pacmac.solarmate.model.SunObject;
 
@@ -24,27 +25,28 @@ public class DownloadClient {
 
     private URL url;
     private HttpURLConnection connection;
+    private double longitude;
+    private double latitude;
+    private int day = 0;
 
-    private String rawResult = null;
+    private PublishSolarDataCallback dataListener = null;
 
 
-    public DownloadClient(double longitude, double latitude, String day) {
+    public DownloadClient(double latitude, double longitude, int day) {
 
-        String path = Constants.URL_BASE + Constants.URL_LAT + latitude + Constants.URL_LON + longitude + Constants.URL_TODAY;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        // set day base on argument
+        String path = Constants.URL_BASE + Constants.URL_LAT + latitude + Constants.URL_LON
+                + longitude + ((day == 0) ? Constants.URL_TODAY : Constants.URL_TOMORROW);
 
-        Log.d(Constants.TAG, "URL: " + path);
+//        Log.d(Constants.TAG, "URL: " + path);
         try {
             url = new URL(path);
         } catch (MalformedURLException e) {
             e.printStackTrace();
-            Log.d(Constants.TAG, "wrong URL");
+            Log.d(Constants.TAG, "wrong URL: " + e.getMessage());
         }
-
-    }
-
-    private void openComm() {
-
-        new DownloadTask().execute(url);
     }
 
     public void getSUNInformation() {
@@ -52,11 +54,9 @@ public class DownloadClient {
         return;
     }
 
-
-    private void setRawResult(String rawResult) {
-        this.rawResult = rawResult;
+    private void openComm() {
+        new DownloadTask().execute(url);
     }
-
 
     // *******************************************************************//
     private class DownloadTask extends AsyncTask<URL, Integer, String> {
@@ -83,21 +83,30 @@ public class DownloadClient {
         @Override
         protected void onPostExecute(String result) {
             Log.d(Constants.TAG, "result: " + result);
-            setRawResult(result);
             try {
-                getJson();
+                if(dataListener != null) {
+                    dataListener.dataReady(day,parseJSON(result));
+                }
             } catch (JSONException e) {
+                Log.e(Constants.TAG, "There was error during parsing JSON string: " + e.getMessage());
                 e.printStackTrace();
             }
         }
 
-        private void getJson() throws JSONException {
+        private SolarDataObject parseJSON(String rawResult) throws JSONException {
             SunObject sunObject = new Gson().fromJson(rawResult, SunObject.class);
-            Log.d(Constants.TAG, "SUNSET: " + sunObject.getResults().getSunrise());
+//            Log.d(Constants.TAG, "SUNSET: " + sunObject.getResults().getSunrise());
 
-            SolarDataObject solarObj = new SolarDataObject(sunObject.getResults().getSunrise(),sunObject.getResults().getSunset(),sunObject.getResults().getSolarNoon(), sunObject.getResults().getDayLength(), System.currentTimeMillis(), );
-
+            SolarDataObject solarObj = new SolarDataObject(sunObject.getResults().getSunrise(), sunObject.getResults().getSunset(),
+                    sunObject.getResults().getSolarNoon(), sunObject.getResults().getDayLength(),
+                    System.currentTimeMillis(), latitude, longitude, "VICTORIA");
+            return solarObj;
         }
+    }
+
+
+    public void setDataListener(PublishSolarDataCallback listener) {
+        this.dataListener = listener;
     }
 
 

@@ -17,5 +17,7 @@ public class Constants {
     public static final String INTENT_EXTRA_CONNECTED_FLAG = "COM.PACMAC_LOC_CONNECT_ACTION";
     public static final String PreferenceFile = "com.pacmac.solarmate_SHARED_PREF_FILE";
     public static final String PreferenceFirstStart = "COM.PACMAC_FIRST_START";
+    public static final String LONG_LOC = "COM.PACMAC_LONGITUDE";
+    public static final String LAT_LOC = "COM.PACMAC_LATITUDE";
 
 }

@@ -17,26 +17,39 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
+import com.pacmac.solarmate.R;
 import com.pacmac.solarmate.model.LocationObject;
+import com.pacmac.solarmate.model.SolarDataObject;
 import com.pacmac.solarmate.util.Constants;
 import com.pacmac.solarmate.util.DownloadClient;
-import com.pacmac.solarmate.R;
 import com.pacmac.solarmate.util.LocationAware;
+import com.pacmac.solarmate.util.Utility;
 
-public class TodayActivity extends AppCompatActivity {
+public class SolarActivity extends AppCompatActivity implements PublishSolarDataCallback {
 
 
     private SectionsPagerAdapter mSectionsPagerAdapter;
     private ViewPager mViewPager;
     private boolean isLocConnected = false;
     private LocationObject location = null;
+    private boolean locationAvailable = false;
+
+    private SolarDataObject today = null;
+    private SolarDataObject tomorrow = null;
 
 
     private BroadcastReceiver locationConnReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             isLocConnected = intent.getBooleanExtra(Constants.INTENT_EXTRA_CONNECTED_FLAG, false);
-            LocationAware.getLastLocation();
+            Bundle locBundle = LocationAware.getLastLocation();
+            if (locBundle != null) {
+                location = new LocationObject(locBundle.getDouble(Constants.LAT_LOC), locBundle.getDouble(Constants.LONG_LOC));
+                locationAvailable = true;
+                downloadSunData(getCurrentFragment());
+            } else {
+                locationAvailable = false;
+            }
         }
     };
 
@@ -46,6 +59,14 @@ public class TodayActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_today);
+
+        // Load Shared Pref Location if available:
+        String lat = Utility.getPreferenceString(getApplicationContext(), Constants.LAT_LOC);
+        String lon = Utility.getPreferenceString(getApplicationContext(), Constants.LONG_LOC);
+        if (lat != null || lon != null) {
+            location = new LocationObject(Double.parseDouble(lat), Double.parseDouble(lon));
+            locationAvailable = true;
+        }
 
         //Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         //setSupportActionBar(toolbar);
@@ -58,18 +79,18 @@ public class TodayActivity extends AppCompatActivity {
         LocalBroadcastManager.getInstance(getApplicationContext()).registerReceiver(locationConnReceiver, locIntentFilter);
         LocationAware.init(getApplicationContext());
 
+
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
 
+//                Log.d(Constants.TAG, "i: " + i);
                 if (isLocConnected) {
                     LocationAware.getLastLocation();
                     location = new LocationObject(LocationAware.getLatitude(), LocationAware.getLongitude());
 
-                    Log.d(Constants.TAG, "Lat:" + location.getLatitude() + " Long:" + location.getLongitude());
-                    DownloadClient downloadClient = new DownloadClient(location.getLatitude(), location.getLongitude(), "today");
-                    downloadClient.getSUNInformation();
+                    downloadSunData(getCurrentFragment());
                 }
             }
         });
@@ -77,13 +98,50 @@ public class TodayActivity extends AppCompatActivity {
     }
 
 
+    private int getCurrentFragment() {
+        return mViewPager.getCurrentItem();
+    }
+
+
     private void getLastLocation() {
         if (isLocConnected) {
             LocationAware.getLastLocation();
             location = new LocationObject(LocationAware.getLatitude(), LocationAware.getLongitude());
-        }
-        else{
+            locationAvailable = true;
+        } else {
             Log.d(Constants.TAG, "Location Service not connected");
+        }
+    }
+
+
+    private void downloadSunData(int fragID) {      // 0 today // 1 tomorrow
+        // TODO network check is missing now
+        if (!locationAvailable)
+            return;
+
+        //get fresher loc update if possible
+        getLastLocation();
+        DownloadClient downloadClient = new DownloadClient(location.getLatitude(), location.getLongitude(), fragID);
+        downloadClient.setDataListener(this);
+        downloadClient.getSUNInformation();
+    }
+
+
+    @Override
+    public void dataReady(int day, SolarDataObject solarData) {
+        updateFragment(day, solarData);
+
+        // create timestamp and save it to preferences so we do not do network calls in short intervals
+    }
+
+    private void updateFragment(int fragID, SolarDataObject data) {
+
+        Fragment fragment = (Fragment) mSectionsPagerAdapter.instantiateItem(mViewPager, mViewPager.getCurrentItem());
+        if (fragment instanceof TodayFragment) {  // TODO and also fragID == 0
+            ((TodayFragment) fragment).updateSolarData(data);
+
+        } else {
+            ((TomorrowFragment) fragment).updateSolarData(data);
         }
     }
 
@@ -115,7 +173,7 @@ public class TodayActivity extends AppCompatActivity {
         public Fragment getItem(int position) {
             switch (position) {
                 case 0:
-                    return TodayFragment.newInstance(position);
+                    return new TodayFragment(position);
                 case 1:
                     return TomorrowFragment.newInstance(position);
                 default:

@@ -21,4 +21,16 @@ public class Utility {
         return  sharedPreferences.getBoolean(key,false);
     }
 
+
+    public static void setPreferenceString(Context context, String key, String string) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(Constants.PreferenceFile, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString(key,string);
+        editor.commit();
+    }
+
+    public static String getPreferenceString(Context context, String key) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(Constants.PreferenceFile, Context.MODE_PRIVATE);
+        return  sharedPreferences.getString(key,null);
+    }
 }

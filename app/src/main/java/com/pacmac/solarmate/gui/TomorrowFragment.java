@@ -7,8 +7,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.pacmac.solarmate.util.Constants;
 import com.pacmac.solarmate.R;
+import com.pacmac.solarmate.model.SolarDataObject;
+import com.pacmac.solarmate.util.Constants;
 
 /**
  * Created by pacmac on 10/05/16.
@@ -34,6 +35,15 @@ public class TomorrowFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_tomorrow, container, false);
         return view;
     }
+
+
+
+
+    public void updateSolarData(SolarDataObject sunObject){
+
+    }
+
+
 }
 
 
