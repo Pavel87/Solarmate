@@ -10,6 +10,7 @@ import android.widget.TextView;
 
 import com.pacmac.solarmate.R;
 import com.pacmac.solarmate.model.SolarDataObject;
+import com.pacmac.solarmate.util.Utility;
 
 /**
  * Created by pacmac on 10/05/16.
@@ -62,15 +63,16 @@ public class TodayFragment extends Fragment {
 
     public void updateSolarData(SolarDataObject sunObject){
 
+        long lastUpdate = sunObject.getTimestamp();
 
         //sunrise = (TextView) findViewById(R.id.sunrise);
         this.solarDataObject = sunObject;
         if (sunrise != null) {
-            sunrise.setText(sunObject.getSunrise());
-//            sunset.setText(sunObject.getSunset());
-//            timestamp.setText(String.valueOf(sunObject.getTimestamp()));
-//            gpsToCity.setText(sunObject.getGeoArea());
-//            nextEvent.setText(sunObject.getSunrise());
+            sunrise.setText(Utility.getShortTimeForEvent(Utility.getDateFromTimeString(sunObject.getSunrise(), lastUpdate)));
+            sunset.setText((Utility.getShortTimeForEvent(Utility.getDateFromTimeString(sunObject.getSunset(), lastUpdate))));
+            timestamp.setText(Utility.getFormatedDateTimeLong(lastUpdate));
+            gpsToCity.setText(sunObject.getGeoArea());
+            nextEvent.setText(Utility.getDiffTimeForNextEvent(Utility.getDateFromTimeString(sunObject.getSunrise(), lastUpdate)));
         }
     }
 

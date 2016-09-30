@@ -23,7 +23,6 @@ public class LocationAware implements GoogleApiClient.ConnectionCallbacks, Googl
 
     private static double longitude = 0;
     private static double latitude = 0;
-    private boolean isConnected = false;
 
     public static double getLongitude() {
         return longitude;
@@ -71,28 +70,21 @@ public class LocationAware implements GoogleApiClient.ConnectionCallbacks, Googl
 
     public void onStop() {
         mGoogleApiClient.disconnect();
-        isConnected = false;
     }
 
 
     @Override
     public void onConnected(Bundle bundle) {
-        isConnected = true;
-        sendLocConnectedBroadcast(isConnected);
         getLastLocation();
 
     }
 
     @Override
     public void onConnectionSuspended(int i) {
-        isConnected = false;
-        sendLocConnectedBroadcast(isConnected);
     }
 
     @Override
     public void onConnectionFailed(ConnectionResult connectionResult) {
-        isConnected = false;
-        sendLocConnectedBroadcast(isConnected);
     }
 
     public static Bundle getLastLocation() {
@@ -117,13 +109,10 @@ public class LocationAware implements GoogleApiClient.ConnectionCallbacks, Googl
         return locBundle;
     }
 
-
-
-    private void sendLocConnectedBroadcast(boolean isConnected) {
-        Intent onConnectedIntent = new Intent(Constants.ACTION_LOC_CONNECTED);
-        onConnectedIntent.putExtra(Constants.INTENT_EXTRA_CONNECTED_FLAG, isConnected);
-        LocalBroadcastManager.getInstance(mContext).sendBroadcast(onConnectedIntent);
+    public static boolean isGooglePlayServicesConnected(){
+        if(mGoogleApiClient == null)
+            return false;
+        return mGoogleApiClient.isConnected();
     }
-
 }
 //TODO check for permission available

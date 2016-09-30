@@ -30,7 +30,7 @@ public class SolarActivity extends AppCompatActivity implements PublishSolarData
 
     private SectionsPagerAdapter mSectionsPagerAdapter;
     private ViewPager mViewPager;
-    private boolean isLocConnected = false;
+
     private LocationObject location = null;
     private boolean locationAvailable = false;
 
@@ -41,7 +41,6 @@ public class SolarActivity extends AppCompatActivity implements PublishSolarData
     private BroadcastReceiver locationConnReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            isLocConnected = intent.getBooleanExtra(Constants.INTENT_EXTRA_CONNECTED_FLAG, false);
             Bundle locBundle = LocationAware.getLastLocation();
             if (locBundle != null) {
                 location = new LocationObject(locBundle.getDouble(Constants.LAT_LOC), locBundle.getDouble(Constants.LONG_LOC));
@@ -86,7 +85,7 @@ public class SolarActivity extends AppCompatActivity implements PublishSolarData
             public void onClick(View view) {
 
 //                Log.d(Constants.TAG, "i: " + i);
-                if (isLocConnected) {
+                if (LocationAware.isGooglePlayServicesConnected()) {
                     LocationAware.getLastLocation();
                     location = new LocationObject(LocationAware.getLatitude(), LocationAware.getLongitude());
 
@@ -104,7 +103,7 @@ public class SolarActivity extends AppCompatActivity implements PublishSolarData
 
 
     private void getLastLocation() {
-        if (isLocConnected) {
+        if (LocationAware.isGooglePlayServicesConnected()) {
             LocationAware.getLastLocation();
             location = new LocationObject(LocationAware.getLatitude(), LocationAware.getLongitude());
             locationAvailable = true;
