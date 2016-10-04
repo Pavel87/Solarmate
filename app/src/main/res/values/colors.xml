@@ -3,4 +3,10 @@
     <color name="colorPrimary">#3F51B5</color>
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
+
+    <color name="colorTimerCritical">#DC0000</color>
+    <color name="colorTimerNegative">#3B3BC6</color>
+    <color name="colorTimerNormal">#111115</color>
+
+
 </resources>

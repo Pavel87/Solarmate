@@ -13,10 +13,10 @@ public class SolarDataObject {
     private long timestamp = 0l;
     private double longitude = 0;
     private double latitude = 0;
-    private String geoArea = "";
+    private String[] geoArea = new String[5];
 
 
-    public SolarDataObject(String sunrise, String sunset, String solarNoon, String dayLength, long timestamp, double latitude, double longitude, String geoArea) {
+    public SolarDataObject(String sunrise, String sunset, String solarNoon, String dayLength, long timestamp, double latitude, double longitude) {
         this.sunset = sunset;
         this.sunrise = sunrise;
         this.solarNoon = solarNoon;
@@ -24,12 +24,27 @@ public class SolarDataObject {
         this.timestamp = timestamp;
         this.latitude = latitude;
         this.longitude = longitude;
-        this.geoArea = geoArea;
+        this.geoArea = new String[5];
+    }
+
+    public SolarDataObject() {
+        this.sunset = "Unknown";
+        this.sunrise = "Unknown";
+        this.solarNoon = "Unknown";
+        this.dayLength = "Unknown";
+        this.timestamp = 0l;
+        this.latitude = 0l;
+        this.longitude = 0l;
+        this.geoArea = new String[5];
     }
 
 
+
     public String getGeoArea() {
-        return geoArea;
+        if (geoArea[0] == null)
+            return "";
+//            return "[" + latitude + ", " + longitude + "]";
+        return geoArea[0];
     }
 
     public String getSunrise() {
@@ -58,5 +73,9 @@ public class SolarDataObject {
 
     public double getLatitude() {
         return latitude;
+    }
+
+    public void setGeoArea(String[] geoArea) {
+        this.geoArea = geoArea;
     }
 }

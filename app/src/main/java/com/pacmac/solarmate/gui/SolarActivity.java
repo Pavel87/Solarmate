@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -88,14 +89,12 @@ public class SolarActivity extends AppCompatActivity implements PublishSolarData
                 if (LocationAware.isGooglePlayServicesConnected()) {
                     LocationAware.getLastLocation();
                     location = new LocationObject(LocationAware.getLatitude(), LocationAware.getLongitude());
-
                     downloadSunData(getCurrentFragment());
                 }
             }
         });
 
     }
-
 
     private int getCurrentFragment() {
         return mViewPager.getCurrentItem();
@@ -108,6 +107,7 @@ public class SolarActivity extends AppCompatActivity implements PublishSolarData
             location = new LocationObject(LocationAware.getLatitude(), LocationAware.getLongitude());
             locationAvailable = true;
         } else {
+            locationAvailable = false;
             Log.d(Constants.TAG, "Location Service not connected");
         }
     }
@@ -120,23 +120,45 @@ public class SolarActivity extends AppCompatActivity implements PublishSolarData
 
         //get fresher loc update if possible
         getLastLocation();
-        DownloadClient downloadClient = new DownloadClient(location.getLatitude(), location.getLongitude(), fragID);
+        DownloadClient downloadClient = new DownloadClient(getApplicationContext(), location.getLatitude(), location.getLongitude(), fragID);
         downloadClient.setDataListener(this);
         downloadClient.getSUNInformation();
+        downloadClient.translateCoordinates();
     }
 
 
     @Override
     public void dataReady(int day, SolarDataObject solarData) {
+        if (solarData == null)
+            return;
+        today = solarData;
         updateFragment(day, solarData);
 
         // create timestamp and save it to preferences so we do not do network calls in short intervals
     }
 
+    @Override
+    public void gecodingCompleted(final int day, final String[] address) {
+        if(address == null)
+            return;
+        if (today != null) {
+            today.setGeoArea(address);
+            updateFragment(day, today);
+        } else {
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    gecodingCompleted(day, address);
+                    Log.d(Constants.TAG, "geocodes waiting to be inserted");
+                }
+            }, 2000);
+        }
+    }
+
     private void updateFragment(int fragID, SolarDataObject data) {
 
         Fragment fragment = (Fragment) mSectionsPagerAdapter.instantiateItem(mViewPager, mViewPager.getCurrentItem());
-        if (fragment instanceof TodayFragment) {  // TODO and also fragID == 0
+        if (fragment instanceof TodayFragment && fragID == 0) {  // TODO and also fragID == 0
             ((TodayFragment) fragment).updateSolarData(data);
 
         } else {
@@ -174,7 +196,7 @@ public class SolarActivity extends AppCompatActivity implements PublishSolarData
                 case 0:
                     return new TodayFragment(position);
                 case 1:
-                    return TomorrowFragment.newInstance(position);
+                    return new TomorrowFragment(position);
                 default:
                     return null;
             }

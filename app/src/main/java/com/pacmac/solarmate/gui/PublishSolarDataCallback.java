@@ -10,4 +10,5 @@ import com.pacmac.solarmate.model.SolarDataObject;
 public interface PublishSolarDataCallback {
 
     void dataReady(int day, SolarDataObject solarData);
+    void gecodingCompleted(int day, String[] address);
 }
